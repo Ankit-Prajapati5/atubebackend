@@ -25,37 +25,38 @@ app.get("/download", (req, res) => {
     return res.status(400).send("URL required");
   }
 
-  // Download headers
   res.setHeader(
     "Content-Disposition",
     'attachment; filename="video.mp4"'
   );
   res.setHeader("Content-Type", "video/mp4");
 
-  // 🔥 yt-dlp path (Render/Linux safe)
   const ytDlpPath = path.join(__dirname, "yt-dlp");
 
   const yt = spawn(ytDlpPath, [
     "-f",
-    "mp4",
+    "bv*+ba/b",              // ✅ best video + best audio
+    "--merge-output-format",
+    "mp4",                   // ✅ force mp4
     "-o",
-    "-",
+    "-",                     // ✅ stream to stdout
     url
   ]);
 
   yt.stdout.pipe(res);
 
-  yt.stderr.on("data", (data) => {
+  yt.stderr.on("data", data => {
     console.error("yt-dlp:", data.toString());
   });
 
-  yt.on("close", (code) => {
+  yt.on("close", code => {
     if (code !== 0) {
       console.error("yt-dlp exited with code", code);
       res.end();
     }
   });
 });
+
 
 /* =========================
    START SERVER
