@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { spawn } = require("child_process");
+const path = require("path");
 
 const app = express();
 app.use(cors());
@@ -14,24 +15,27 @@ app.get("/", (req, res) => {
 });
 
 /* =========================
-   YOUTUBE DOWNLOAD (yt-dlp)
+   UNIVERSAL DOWNLOAD ROUTE
+   (YouTube + Facebook + Instagram)
 ========================= */
-app.get("/youtube-download", (req, res) => {
+app.get("/download", (req, res) => {
   const { url } = req.query;
 
   if (!url) {
     return res.status(400).send("URL required");
   }
 
-  // Response headers
+  // Download headers
   res.setHeader(
     "Content-Disposition",
-    'attachment; filename="youtube-video.mp4"'
+    'attachment; filename="video.mp4"'
   );
   res.setHeader("Content-Type", "video/mp4");
 
-  // 🔥 Linux compatible yt-dlp command
-  const yt = spawn("yt-dlp", [
+  // 🔥 yt-dlp path (Render/Linux safe)
+  const ytDlpPath = path.join(__dirname, "yt-dlp");
+
+  const yt = spawn(ytDlpPath, [
     "-f",
     "mp4",
     "-o",
@@ -42,7 +46,7 @@ app.get("/youtube-download", (req, res) => {
   yt.stdout.pipe(res);
 
   yt.stderr.on("data", (data) => {
-    console.error("yt-dlp error:", data.toString());
+    console.error("yt-dlp:", data.toString());
   });
 
   yt.on("close", (code) => {
@@ -56,6 +60,8 @@ app.get("/youtube-download", (req, res) => {
 /* =========================
    START SERVER
 ========================= */
-app.listen(5000, () => {
-  console.log("✅ Backend running on port 5000");
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`✅ Backend running on port ${PORT}`);
 });
